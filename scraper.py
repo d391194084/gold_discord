@@ -57,33 +57,33 @@ def send_discord_message(content):
 def main():
     new_prices = fetch_prices()
     if not new_prices:
-        print("Could not fetch prices.")
+        print("無法抓取價格，請檢查網頁結構。")
         return
 
+    # 讀取舊資料
     old_prices = {}
-    if os.path.exists(DATA_FILE):
+    is_first_run = not os.path.exists(DATA_FILE)
+    
+    if not is_first_run:
         with open(DATA_FILE, "r", encoding="utf-8") as f:
             old_prices = json.load(f)
 
-    # 檢查是否有任何項目的價格發生變動
-    if new_prices != old_prices:
-        message = "🔔 **王鼎貴金屬報價變動通知** 🔔\n"
-        message += "```md\n"
+    # 判斷：如果是第一次執行，或是價格有變動，就發送訊息
+    if is_first_run or new_prices != old_prices:
+        title = "🚀 **王鼎貴金屬：監控啟動/價格更新** 🚀" if is_first_run else "🔔 **王鼎貴金屬：報價變動通知** 🔔"
+        
+        message = f"{title}\n```md\n"
         for item, price in new_prices.items():
-            # 標註變動的項目
-            change_tag = " <--" if old_prices.get(item) != price else ""
+            change_tag = " <--" if not is_first_run and old_prices.get(item) != price else ""
             message += f"- {item}: {price}{change_tag}\n"
         message += "```\n"
         message += f"🔗 查看官網: {TARGET_URL}"
         
         send_discord_message(message)
         
-        # 更新存檔
+        # 強制寫入/更新存檔
         with open(DATA_FILE, "w", encoding="utf-8") as f:
             json.dump(new_prices, f, ensure_ascii=False, indent=4)
-        print("Change detected. Notification sent.")
+        print("訊息已發送並更新 JSON 檔案。")
     else:
-        print("No changes detected.")
-
-if __name__ == "__main__":
-    main()
+        print("價格未變動，跳過通知。")
