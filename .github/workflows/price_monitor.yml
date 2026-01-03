@@ -26,17 +26,17 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: python scraper.py
 
-     - name: Commit and push changes
+      - name: Commit and push changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # 檢查檔案是否存在，避免 git add 報錯
+          # 檢查檔案是否存在才執行 add
           if [ -f last_price.json ]; then
             git add last_price.json
-            # 只有在有東西可以 commit 的時候才執行
-            git commit -m "Update last observed prices" || echo "No changes to commit"
+            # 如果沒有東西需要 commit (例如檔案內容沒變)，echo 一聲就好，不要報錯
+            git commit -m "自動更新價格紀錄" || echo "Nothing to commit"
             git push
           else
-            echo "last_price.json not found, skipping commit."
+            echo "找不到 last_price.json，跳過本次 Commit"
           fi
